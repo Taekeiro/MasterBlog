@@ -5,6 +5,7 @@ app = Flask(__name__)
 
 # JSON file to store blog posts
 DATA_FILE = 'blog_posts.json'
+COMMENTS_FILE = 'comments.json'
 
 
 # Load posts from the JSON file
@@ -22,23 +23,66 @@ def save_posts(posts):
         json.dump(posts, file, indent=4)
 
 
-# Initial posts loaded from the file
+# Load comments from the JSON file
+def load_comments():
+    try:
+        with open(COMMENTS_FILE, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+
+# Save comments to the JSON file
+def save_comments(comments):
+    with open(COMMENTS_FILE, 'w') as file:
+        json.dump(comments, file, indent=4)
+
+
+# Initial posts and comments loaded from the file
 posts = load_posts()
+comments = load_comments()
 
 
 # Homepage: List all blog posts
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', posts=posts)
+    if request.method == 'POST':
+        post_id = request.form.get('post_id')
+        commenter = request.form.get('commenter')
+        comment_text = request.form.get('comment')
+        if post_id and commenter and comment_text:
+            post_comments = comments.get(post_id, [])
+            new_comment = {"commenter": commenter, "comment": comment_text}
+            post_comments.append(new_comment)
+            comments[post_id] = post_comments
+            save_comments(comments)
+
+    post_with_comments = []
+    for post in posts:
+        post_comments = comments.get(str(post['id']), [])
+        post_with_comments.append({"post": post, "comments": post_comments})
+
+    return render_template('index.html', posts=post_with_comments)
 
 
 # View details of a single post
-@app.route('/post/<int:post_id>')
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def view_post(post_id):
     post = next((post for post in posts if post['id'] == post_id), None)
     if not post:
         return "Post not found", 404
-    return render_template('post.html', post=post)
+
+    post_comments = comments.get(str(post_id), [])
+
+    if request.method == 'POST':
+        commenter = request.form.get('commenter')
+        comment_text = request.form.get('comment')
+        new_comment = {"commenter": commenter, "comment": comment_text}
+        post_comments.append(new_comment)
+        comments[str(post_id)] = post_comments
+        save_comments(comments)
+
+    return render_template('post.html', post=post, comments=post_comments)
 
 
 # Add a new post
@@ -60,7 +104,9 @@ def add_post():
 def delete_post(post_id):
     global posts
     posts = [post for post in posts if post['id'] != post_id]
+    comments.pop(str(post_id), None)
     save_posts(posts)
+    save_comments(comments)
     return redirect(url_for('index'))
 
 

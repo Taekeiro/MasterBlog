@@ -5,20 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Flask Blog</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        function toggleForm(postId) {
+            const form = document.getElementById(`comment-form-${postId}`);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
 </head>
 <body>
     <h1>Welcome to My Flask Blog!</h1>
     {% if posts %}
-        {% for post in posts %}
+        {% for item in posts %}
             <div class="post">
-                <h2>{{ post.title }}</h2>
-                <p><em>Written by {{ post.author }}</em></p>
-                <p>{{ post.content[:100] }}...</p>
-                <a href="{{ url_for('view_post', post_id=post.id) }}">Read more</a>
-                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display: inline;">
+                <h2>{{ item.post.title }}</h2>
+                <p><em>Written by {{ item.post.author }}</em></p>
+                <p>{{ item.post.content[:100] }}...</p>
+                <a href="{{ url_for('view_post', post_id=item.post.id) }}">Read more</a>
+                <a href="{{ url_for('update_post', post_id=item.post.id) }}" class="update-btn">Update</a>
+                <form method="POST" action="{{ url_for('delete_post', post_id=item.post.id) }}" style="display: inline;">
                     <button type="submit" class="delete-btn">Delete</button>
                 </form>
-                <a href="{{ url_for('update_post', post_id=post.id) }}" class="update-btn">Update</a>
+                <button onclick="toggleForm({{ item.post.id }})" class="toggle-comment-btn">Leave a Comment</button>
+                <form method="POST" action="{{ url_for('index') }}" id="comment-form-{{ item.post.id }}" class="comment-form" style="display: none;">
+                    <input type="hidden" name="post_id" value="{{ item.post.id }}">
+                    <div class="form-group">
+                        <label for="commenter">Your Name:</label>
+                        <input type="text" id="commenter" name="commenter" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Your Comment:</label>
+                        <textarea id="comment" name="comment" rows="2" required></textarea>
+                    </div>
+                    <button type="submit">Submit</button>
+                </form>
+                <h3>Comments:</h3>
+                {% if item.comments %}
+                    {% for comment in item.comments %}
+                        <div class="comment">
+                            <p><strong>{{ comment.commenter }}:</strong> {{ comment.comment }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No comments yet. Be the first to comment!</p>
+                {% endif %}
             </div>
         {% endfor %}
     {% else %}

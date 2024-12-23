@@ -1,10 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-$END$
+    <h1>{{ post.title }}</h1>
+    <p><em>Written by {{ post.author }}</em></p>
+    <p>{{ post.content }}</p>
+
+    <hr>
+
+    <h2>Comments</h2>
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="comment">
+                <p><strong>{{ comment.commenter }}:</strong> {{ comment.comment }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No comments yet. Be the first to comment!</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Add a Comment</h3>
+    <form method="POST">
+        <div class="form-group">
+            <label for="commenter">Your Name:</label>
+            <input type="text" id="commenter" name="commenter" required>
+        </div>
+        <div class="form-group">
+            <label for="comment">Your Comment:</label>
+            <textarea id="comment" name="comment" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Submit</button>
+    </form>
+
+    <a href="{{ url_for('index') }}" class="add-post-button">Back to Home</a>
 </body>
 </html>
