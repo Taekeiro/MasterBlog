@@ -43,6 +43,17 @@ posts = load_posts()
 comments = load_comments()
 
 
+# Initialize likes for posts
+def initialize_likes():
+    for post in posts:
+        if 'likes' not in post:
+            post['likes'] = 0
+    save_posts(posts)
+
+
+initialize_likes()
+
+
 # Homepage: List all blog posts
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -63,6 +74,16 @@ def index():
         post_with_comments.append({"post": post, "comments": post_comments})
 
     return render_template('index.html', posts=post_with_comments)
+
+
+# Like a post
+@app.route('/like/<int:post_id>', methods=['POST'])
+def like_post(post_id):
+    post = next((post for post in posts if post['id'] == post_id), None)
+    if post:
+        post['likes'] += 1
+        save_posts(posts)
+    return redirect(url_for('index'))
 
 
 # View details of a single post
@@ -93,7 +114,7 @@ def add_post():
         title = request.form.get('title')
         content = request.form.get('content')
         new_id = max(post['id'] for post in posts) + 1 if posts else 1
-        posts.append({"id": new_id, "author": author, "title": title, "content": content})
+        posts.append({"id": new_id, "author": author, "title": title, "content": content, "likes": 0})
         save_posts(posts)
         return redirect(url_for('index'))
     return render_template('add.html')
